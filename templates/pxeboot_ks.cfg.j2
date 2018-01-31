@@ -1,0 +1,349 @@
+# Following hardening guide at https://github.com/RedHatGov/ssg-el7-kickstart
+
+#version=DEVEL
+# System authorization information
+auth --enableshadow --passalgo=sha512
+# Use network install
+url --url="ftp://{{ ftp_ipv4_address }}/pub"
+# Use text mode install
+cmdline
+# Don't run the Setup Agent on first boot
+firstboot --disable
+selinux --enforcing
+ignoredisk --only-use=sda
+# Keyboard layouts
+keyboard --vckeymap=us --xlayouts='us'
+# System language
+lang en_US.UTF-8
+
+# Network information
+%include /tmp/network.ks
+
+# System timezone
+timezone --utc Etc/UTC
+# System bootloader configuration
+# To make a crypted password run
+# generate from user input
+# python -c 'import crypt,getpass; print(crypt.crypt(getpass.getpass(), crypt.mksalt(crypt.METHOD_SHA512)))'
+# generate from a random string (bootloader is encrypted, but no one knows the password if done with automation and not captured)
+# python -c 'import crypt,sys; print(crypt.crypt(sys.argv[1], crypt.mksalt(crypt.METHOD_SHA512)))' `openssl rand -base64 48`
+#
+#
+# cat ~/pfile | grub2-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}'
+bootloader --append="rhgb quiet audit=1 transparent_hugepage=never ipv6.disable=1 panic=1 {% if disable_numa==True %}numa=off{% endif %}" --location=mbr --boot-drive=sda --iscrypted --password=grub.pbkdf2.sha512.10000.5E6A65DD6305678042C96BF43DEB5211A6E77AEEC6AB35F75C37F3A73DE6796930D0FC00C68D476E0A1A15C845C8B9FEFEB2FF85CA43D69ECAB5E4B30E8F64ED.E31A344F6446642440FB70BC5DBC68EDD8FB086A257E03F3DA42A66BEC8129F4C897D5E6FC662562AF70BF0DA3C9B6E60902E7B250C33CD95EFD943CC9C8720E
+
+# no root password and lock the account, only sudo is possible
+rootpw --lock
+
+# Initialize (format) all disks (optional)
+zerombr
+
+# The following partition layout scheme assumes disk of size 20GB or larger
+# Modify size of partitions appropriately to reflect actual machine's hardware
+#
+# Remove Linux partitions from the system prior to creating new ones (optional)
+# --linux       erase all Linux partitions
+# --initlabel   initialize the disk label to the default based on the underlying architecture
+clearpart --linux --initlabel
+
+# Create primary system partitions (required for installs)
+part /boot --fstype=xfs --size=512
+part pv.01 --grow --size=1
+
+# Create a Logical Volume Management (LVM) group (optional)
+volgroup vg1 --pesize=4096 pv.01
+
+logvol /              --fstype xfs  --name=lv_root    --vgname=vg1  --size=3072
+logvol /tmp           --fstype xfs  --name=lv_tmp     --vgname=vg1  --size=1024   --fsoptions="defaults,relatime,nodev,nosuid,noexec,discard"
+logvol /home          --fstype xfs  --name=lv_home    --vgname=vg1  --size=1024   --fsoptions="defaults,relatime,nodev,nosuid,discard"
+logvol /var           --fstype xfs  --name=lv_var     --vgname=vg1  --size=2048   --fsoptions="defaults,relatime,nodev,discard"
+logvol /var/log       --fstype xfs  --name=lv_varlog  --vgname=vg1  --size=1024   --fsoptions="defaults,relatime,nodev,nosuid,noexec,discard"
+logvol /var/log/audit --fstype xfs  --name=lv_audit   --vgname=vg1  --size=512    --fsoptions="defaults,relatime,nodev,nosuid,noexec,discard"
+logvol /u01           --fstype xfs  --name=lv_u01     --vgname=vg1  --size=2048   --fsoptions="defaults,relatime,nodev,discard"         --grow
+#logvol swap                         --name=lv_swap    --vgname=vg1  --size=2016
+%include /tmp/swappart.inc
+
+reboot
+
+%packages --nobase --excludedocs
+#do not install base
+@core --nodefaults
+openssh
+open-vm-tools
+cryptsetup
+dracut-fips-aesni
+fipscheck
+aide
+# CCE-27351-6 Install the screen Package
+screen
+chrony
+libreswan
+rsyslog
+unzip
+zip
+prelink
+wget
+# python-simplejson
+# libselinux-python
+# SCAP CONTENT
+openscap
+openscap-utils
+xml-common
+# for ansible
+python-setuptools
+PyYAML
+python-jinja2
+{% include 'active-directory-packages.j2' %}
+# REMOVE PACKAGES
+-abrt*
+-avahi*
+-iwl*
+-ivtv-firmware
+-alsa-tools-firmware
+-iwl3160-firmware
+-iwl5000-firmware
+-iwl1000-firmware
+-iwl100-firmware
+-linux-firmware
+-alsa-firmware
+-aic94xx-firmware
+-iwl6000-firmware
+-iwl6050-firmware
+-iwl7265-firmware
+-iwl4965-firmware
+-iwl6000g2b-firmware
+-iwl105-firmware
+-iwl2000-firmware
+-iwl5150-firmware
+-iwl7260-firmware
+-iwl3945-firmware
+-iwl2030-firmware
+-iwl6000g2a-firmware
+-iwl135-firmware
+# REMOVE NetworkManager
+-NetworkManager*
+-NetworkManager-config-server
+-rhn-setup
+-rhn-check
+-rhnsd
+-rhn-client-tools
+-rhnlib
+-yum-rhn-plugin
+-prelink
+-iprutils
+-btrfs-progs*
+#-cronie-anacron
+#-cronie
+#-crontabs
+-kexec-tools
+-plymouth-scripts
+-ModemManager-glib
+-wpa_supplicant
+-subscription-manager
+-Red_Hat_Enterprise_Linux-Release_Notes-7*
+-redhat-support*
+-redhat-indexhtml
+-virt-what
+# oracle packages minus the X11 stuff
+binutils
+compat-libcap1
+glibc.i686
+glibc
+glibc-devel.i686
+glibc-devel
+ksh
+libaio.i686
+libaio
+libaio-devel.i686
+libaio-devel
+libgcc.i686
+libgcc
+libstdc++.i686
+libstdc++
+libstdc++-devel.i686
+libstdc++-devel
+make
+net-tools
+nfs-utils
+smartmontools
+sysstat
+unixODBC
+gcc-c++
+%end
+
+%addon com_redhat_kdump --disable
+%end
+
+%addon org_fedora_oscap
+        content-type = scap-security-guide
+        profile = stig-rhel7-server-upstream
+%end
+
+%pre --interpreter=/bin/bash --erroronfail --log=/root/ks-pre.log
+
+ip addr | grep -i broadcast | awk '{ print $2 }' > /tmp/interface
+sed -i 's/:/\ /g' /tmp/interface
+interface=`cat /tmp/interface`
+echo "network --bootproto=dhcp --device=$interface --noipv6 --hostname={{ host_name }}.{{ domain_name }} --activate" >/tmp/network.ks
+
+echo "firewall --trust $interface --service=ssh --port=1521:tcp,5500:tcp" > /tmp/firewall.ks
+
+# Configure swap size based on Oracle's recommendations
+# 1Gb  <= RAM < 2Gb  :: swap = RAM * 1.5
+# 2Gb  <= RAM < 16Gb :: swap = RAM
+# 16Gb <= RAM        :: swap = 16Gb
+# Add another 10 percent to account for rounding errors
+act_mem=$((`grep MemTotal: /proc/meminfo | awk '{print $2}'` / 1024))
+swap_mem=18022
+if [ "$act_mem" -lt 2048 ]; then
+  swap_mem=$(($act_mem + $act_mem/2 + $act_mem/10))
+else
+    if [ "$act_mem" -lt 16384 ]; then
+          swap_mem=$(($act_mem + $act_mem/10))
+    fi
+fi
+echo "logvol swap                         --name=lv_swap    --vgname=vg1  --size=${swap_mem}" > /tmp/swappart.inc
+%end
+
+%post --log=/root/ks-post.log
+
+# create the group for linuxadmins
+groupadd --system linuxadmins
+
+# create the group for ssh users
+groupadd --system sshusers
+
+# root user is locked
+# Create an admin user
+/sbin/adduser --comment "Administrative User" --system --create-home --groups wheel,linuxadmins,sshusers admin
+# give admin a known password for now, remove before use
+echo -n admin:RHEL7P@ssw0rd! | chpasswd -c SHA512
+
+/bin/cat <<- EOT >> /etc/sudoers.d/admin_conf
+admin ALL=(ALL)  NOPASSWD: ALL
+EOT
+/usr/bin/chmod 0440 /etc/sudoers.d/admin_conf
+
+/bin/mkdir --parents /home/admin/.ssh
+/usr/bin/wget --output-document=/home/admin/.ssh/authorized_keys ftp://{{ ftp_ipv4_address }}:/pub/authorized_keys
+/bin/chown --recursive ansible:ansible /home/admin/.ssh
+/bin/chmod 700 /home/admin/.ssh
+/bin/chmod 600 /home/admin/.ssh/authorized_keys
+
+# todo limit access to AD group linuxadmins via /etc/security/access.conf
+# allow linuxadmins to sudo
+/bin/cat <<- EOT >> /etc/sudoers.d/linuxadmins_conf
+%linuxadmins ALL=(ALL)  NOPASSWD: ALL
+EOT
+/usr/bin/chmod 0440 /etc/sudoers.d/linuxadmins_conf
+
+# Create a user for ansible
+adduser --comment "Ansible User" --system --create-home --groups sshusers ansible
+
+/bin/mkdir --parents /home/ansible/.ssh
+/usr/bin/wget --output-document=/home/ansible/.ssh/authorized_keys ftp://{{ ftp_ipv4_address }}:/pub/authorized_keys
+/bin/chown --recursive ansible:ansible /home/ansible/.ssh
+/bin/chmod 700 /home/ansible/.ssh
+/bin/chmod 600 /home/ansible/.ssh/authorized_keys
+
+/bin/cat <<- EOT >> /etc/sudoers.d/ansible_conf
+ansible ALL=(ALL)  NOPASSWD: ALL
+EOT
+/usr/bin/chmod 0440 /etc/sudoers.d/ansible_conf
+
+# Ensure Red Hat GPG Key Installed
+/bin/cat <<- EOT >> /root/RPM-GPG-KEY-redhat-release
+{% include 'RPM-GPG-KEY-redhat-release' %}
+
+EOT
+#/usr/bin/wget --output-document=/root/RPM-GPG-KEY-redhat-release ftp://{{ ftp_ipv4_address }}:/pub/RPM-GPG-KEY-redhat-release
+/usr/bin/rpm --import /root/RPM-GPG-KEY-redhat-release
+
+#firewall-cmd --zone=public --remove-service=dhcpv6-client --permanent
+#firewall-offline-cmd --direct --add-rule ipv4 filter INPUT 0 -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
+
+# Create Repository for Local Patching
+/usr/bin/cat <<- EOT > /etc/yum.repos.d/local.repo
+{% include 'local.repo.j2' %}
+
+EOT
+
+#{#% include 'oracle-prereqs.j2' %#}
+
+echo "kickstart file used: {{ newvm.ansible_facts.hw_product_uuid }}_ks.cfg" >> /root/kickstart_used
+echo "kickstart file generated: {{ datetime.stdout }}" >> /root/kickstart_used
+
+# Enable FIPS 140-2 (https://access.redhat.com/solutions/137833)
+mv -v /boot/initramfs-$(uname -r).img{,.bak}
+dracut
+grubby --update-kernel=$(grubby --default-kernel) --args=fips=1
+uuid=$(findmnt -no uuid /boot)
+[[ -n $uuid ]] && grubby --update-kernel=$(grubby --default-kernel) --args=boot=UUID=${uuid}
+sed -i '/^GRUB_CMDLINE_LINUX=/s/"$/ fips=1"/' /etc/default/grub
+uuid=$(findmnt -no uuid /boot)
+[[ -n $uuid ]] && sed -i "/^GRUB_CMDLINE_LINUX=/s/\"$/ boot=UUID=${uuid}\"/" /etc/default/grub
+
+/usr/bin/wget --output-document=/root/ipa-pam-configuration.sh ftp://{{ ftp_ipv4_address }}:/rhel/software/ipa-pam-configuration.sh
+/usr/bin/chmod 700 /root/ipa-pam-configuration.sh
+/root/ipa-pam-configuration.sh
+
+/usr/bin/wget --output-document=/root/ssg-supplemental.sh ftp://{{ ftp_ipv4_address }}:/rhel/software/ssg-supplemental.sh
+/usr/bin/chmod 700 /root/ssg-supplemental.sh
+/root/ssg-supplemental.sh
+
+###############################################################################
+# Generate SSH Host Keys - Highest Possible Encryption
+##############################################################################
+ssh-keygen -b 4096 -t rsa -N "" -f /etc/ssh/ssh_host_rsa_key
+#ssh-keygen -b 1024 -t dsa -N "" -f /etc/ssh/ssh_host_dsa_key
+ssh-keygen -b 521 -t ecdsa -N "" -f /etc/ssh/ssh_host_ecdsa_key
+
+# Fix a bug in the RHEL 7.3 "%addon org_fedora_oscap" CCE remediation
+#/bin/sed --in-place='.has_bug_from_CEE_remediation' --expression='s/aes256-cbcMACs/aes256-cbc\nMACs/g' /etc/ssh/sshd_config
+# If fix not needed remove the backup file
+#if /bin/diff /etc/ssh/sshd_config /etc/ssh/sshd_config.has_bug_from_CEE_remediation > /dev/null; then /bin/rm /etc/ssh/sshd_config.has_bug_from_CEE_remediation; fi
+
+# ed25519 is not authorized for FIPS 140-2
+sed -i 's/^HostKey \/etc\/ssh\/ssh_host_ed25519_key/#HostKey \/etc\/ssh\/ssh_host_ed25519_key/g' /etc/ssh/sshd_config
+# Only use ipv4
+sed -i 's/^#AddressFamily any/AddressFamily inet/g' /etc/ssh/sshd_config
+# Don't accept passwords
+sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config
+
+#sed -i '/Ciphers.*/d' /etc/ssh/sshd_config
+#sed -i '/MACs.*/d' /etc/ssh/sshd_config
+#echo "# CCE-27295-5 Use Only Approved Ciphers" >> /etc/ssh/sshd_config
+#echo "Ciphers chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com" >> /etc/ssh/sshd_config
+#echo "# CCE-27455-5 Use Only Approved MACs" >> /etc/ssh/sshd_config
+#echo "MACs umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1" >> /etc/ssh/sshd_config
+
+#firewall-offline-cmd --set-default-zone=public
+#firewall-cmd --zone=public --remove-service=dhcpv6-client --permanent
+#firewall-offline-cmd --direct --add-rule ipv4 filter INPUT 0 -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
+
+ip addr | grep -i broadcast | awk '{ print $2 }' > /tmp/interface
+sed -i 's/:/\ /g' /tmp/interface
+interface=`cat /tmp/interface`
+# drop zone: The lowest level of trust. All incoming connections are dropped without reply and only outgoing connections are possible.
+/usr/bin/firewall-offline-cmd --set-default-zone=drop
+/usr/bin/firewall-offline-cmd --change-interface=`echo $interface` --zone=drop
+echo "ZONE=\"drop\"" >> /etc/sysconfig/network-scripts/ifcfg-`echo $interface`
+/usr/bin/firewall-offline-cmd --add-service=ssh --zone=drop
+/usr/bin/firewall-offline-cmd --add-port=1521/tcp --zone=drop
+/usr/bin/firewall-offline-cmd --add-port=5500/tcp --zone=drop
+
+# echo "firewall --trust $interface --service=ssh --port=1521:tcp,5500:tcp" > /tmp/firewall.ks
+
+/usr/bin/wget --output-document=/root/ansible.tgz ftp://{{ ftp_ipv4_address }}:/pub/ansible.tgz
+
+# fix an anoyance with sourcing .bashrc after already logged in
+# you get a message that TMOUT is readonly, the autologout script is trying to set it again
+/usr/bin/sed -i 's/TMOUT=900/TMOUT=${TMOUT:=900}/' /etc/profile.d/autologout.sh
+
+# transfer the oracle database software
+/usr/bin/wget --output-document=/u01/{{ oracle_database.file_name }} ftp://{{ ftp_ipv4_address }}:/rhel/software/{{ oracle_database.file_name }}
+# record the oracle database software hash
+echo "{{ oracle_database.sha256 }}  {{ oracle_database.file_name }}" > /u01/database.sha256
+# sha256sum --check /u01/database.sha256
+
+%end

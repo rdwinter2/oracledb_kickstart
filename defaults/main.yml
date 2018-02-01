@@ -1,5 +1,8 @@
 ---
 
+hostname: localhost
+domain_name: localdomain
+
 ftp_server: 192.168.0.5
 local_yum: http://repo01
 gpgcheck: 0

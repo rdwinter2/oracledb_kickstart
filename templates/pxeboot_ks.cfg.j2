@@ -230,7 +230,7 @@ pam_krb5
 ip addr | grep -i broadcast | awk '{ print $2 }' > /tmp/interface
 sed -i 's/:/\ /g' /tmp/interface
 interface=`cat /tmp/interface`
-echo "network --bootproto=dhcp --device=$interface --noipv6 --hostname={{ host_name }}.{{ domain_name }} --activate" >/tmp/network.ks
+echo "network --bootproto=dhcp --device=$interface --noipv6 --hostname={{ hostname }}.{{ domain_name }} --activate" >/tmp/network.ks
 
 echo "firewall --trust $interface --service=ssh --port=1521:tcp,5500:tcp" > /tmp/firewall.ks
 

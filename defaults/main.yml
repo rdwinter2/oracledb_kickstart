@@ -1,8 +1,19 @@
 ---
 
 ftp_server: 192.168.0.5
-yum_url: http://repo01
+local_yum: http://repo01
 gpgcheck: 0
+
+# partition sizes in KB
+boot_size: 512
+lv_root_size: 3072
+lv_tmp_size: 1024
+lv_home_size: 1024
+lv_var_size: 2048
+lv_varlog_size: 1024
+lv_audit_size: 512
+# lv_u01 will grow to fill /dev/sda
+lv_u01_size: 2048
 
 random_bootloader_pw: true
 # yes `openssl rand -base64 48` | grub2-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}'

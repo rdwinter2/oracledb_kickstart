@@ -1,29 +1,29 @@
 [rhel-7-server-rpms]
 name = Red Hat server rpms
-baseurl = {{ yum_url }}/rhel-7-server-rpms
+baseurl = {{ local_yum }}/rhel-7-server-rpms
 enabled = 1
 gpgcheck = {{ gpgcheck }}
 
 [rhel-7-server-optional-rpms]
 name = Red Hat optional rpms
-baseurl = {{ yum_url }}/rhel-7-server-optional-rpms
+baseurl = {{ local_yum }}/rhel-7-server-optional-rpms
 enabled = 1
 gpgcheck = {{ gpgcheck }}
 
 [rhel-7-server-extras-rpms]
 name = Red Hat extras rpms
-baseurl = {{ yum_url }}/rhel-7-server-extras-rpms
+baseurl = {{ local_yum }}/rhel-7-server-extras-rpms
 enabled = 1
 gpgcheck = {{ gpgcheck }}
 
 [epel-7]
-name = EPEL
-baseurl = {{ yum_url }}/epel-7
+name = Extra Packages for Enterprise Linux (EPEL)
+baseurl = {{ local_yum }}/epel-7
 enabled = 1
 gpgcheck = {{ gpgcheck }}
 
 [packages]
-name = Random packages
-baseurl = {{ yum_url }}/packages
+name = Random packages without yum repos
+baseurl = {{ local_yum }}/packages
 enabled = 1
 gpgcheck = {{ gpgcheck }}

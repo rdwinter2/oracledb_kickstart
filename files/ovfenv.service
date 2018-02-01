@@ -1,0 +1,18 @@
+# file: /lib/systemd/system/ovfenv.service
+[Unit]
+Description=The ovf Environment Service
+DefaultDependencies=no
+After=vmtoolsd.service
+Before=network-pre.target network.service
+Wants=network-pre.target
+ConditionVirtualization=vmware
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ovfenv
+ExecStartPost=/usr/local/bin/ovfenv_post
+TimeoutSec=0
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

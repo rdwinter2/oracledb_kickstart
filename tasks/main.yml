@@ -1,0 +1,12 @@
+---
+
+# http://www.firewalld.org/documentation/howto/add-a-service.html
+# firewall-offline-cmd --new-service=myservice
+# firewall-offline-cmd --service=service --set-description=description
+# firewall-offline-cmd --service=service --set-short=description
+# firewall-offline-cmd --service=service --add-port=portid[-portid]/protocol
+# firewall-offline-cmd --service=service --add-protocol=protocol
+# firewall-offline-cmd --service=service --add-source-port=portid[-portid]/protocol
+# firewall-offline-cmd --service=service --add-module=module
+# firewall-offline-cmd --service=service --set-destination=ipv:address[/mask]
+

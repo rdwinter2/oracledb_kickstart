@@ -61,5 +61,7 @@ fabric.properties
 
 .idea/
 
+*.iml
+
 
 # End of https://www.gitignore.io/api/intellij+all

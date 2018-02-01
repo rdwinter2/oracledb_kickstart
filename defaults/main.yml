@@ -1,6 +1,8 @@
 ---
 
 ftp_server: 192.168.0.5
+yum_url: http://repo01
+gpgcheck: 0
 
 random_bootloader_pw: true
 # yes `openssl rand -base64 48` | grub2-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}'

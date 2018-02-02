@@ -154,36 +154,6 @@ python-jinja2
 -redhat-indexhtml
 -virt-what
 -fprintd
-# oracle packages minus the X11 stuf
-binutils
-compat-libcap1
-glibc
-glibc-devel
-ksh
-libaio
-libaio-devel
-libgcc
-libstdc++
-libstdc++-devel
-make
-nfs-utils
-net-tools
-openssh
-smartmontools
-sysstat
-unixODBC
-gcc-c++
-tuned
-tuned-profiles-oracle
-# 0racle x11 packages
-libX11
-libXau
-libXi
-libXtst
-libxcb
-# GUI installer displayed weird characters without these
-dejavu-serif-fonts
-dejavu-fonts-common
 # for time synchronization
 ntp
 # Packages for SELinux
@@ -314,8 +284,6 @@ EOT
 
 EOT
 
-#{#% include 'oracle-prereqs.j2' %#}
-
 echo "kickstart file used: {{ newvm.ansible_facts.hw_product_uuid }}_ks.cfg" >> /root/kickstart_used
 echo "kickstart file generated: {{ datetime.stdout }}" >> /root/kickstart_used
 
@@ -375,21 +343,13 @@ interface=`cat /tmp/interface`
 /usr/bin/firewall-offline-cmd --change-interface=`echo $interface` --zone=drop
 echo "ZONE=\"drop\"" >> /etc/sysconfig/network-scripts/ifcfg-`echo $interface`
 /usr/bin/firewall-offline-cmd --add-service=ssh --zone=drop
-/usr/bin/firewall-offline-cmd --add-port=1521/tcp --zone=drop
-/usr/bin/firewall-offline-cmd --add-port=5500/tcp --zone=drop
+#/usr/bin/firewall-offline-cmd --add-port=1521/tcp --zone=drop
+#/usr/bin/firewall-offline-cmd --add-port=5500/tcp --zone=drop
 
 # echo "firewall --trust $interface --service=ssh --port=1521:tcp,5500:tcp" > /tmp/firewall.ks
-
-/usr/bin/wget --output-document=/root/ansible.tgz ftp://{{ ftp_server }}:/pub/ansible.tgz
 
 # fix an anoyance with sourcing .bashrc after already logged in
 # you get a message that TMOUT is readonly, the autologout script is trying to set it again
 /usr/bin/sed -i 's/TMOUT=900/TMOUT=${TMOUT:=900}/' /etc/profile.d/autologout.sh
-
-# transfer the oracle database software
-/usr/bin/wget --output-document=/u01/{{ oracle_database.file_name }} ftp://{{ ftp_server }}:/rhel/software/{{ oracle_database.file_name }}
-# record the oracle database software hash
-echo "{{ oracle_database.sha256 }}  {{ oracle_database.file_name }}" > /u01/database.sha256
-# sha256sum --check /u01/database.sha256
 
 %end

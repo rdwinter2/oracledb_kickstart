@@ -265,6 +265,10 @@ EOT
 
 EOT
 
+/usr/bin/cat <<- EOT > /etc/ansible/hosts
+localhost ansible_connection=local
+EOT
+
 echo "kickstart file used: {{ newvm.ansible_facts.hw_product_uuid }}_ks.cfg" >> /root/kickstart_used
 echo "kickstart file generated: {{ datetime.stdout }}" >> /root/kickstart_used
 

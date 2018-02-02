@@ -71,120 +71,103 @@ reboot
 %packages --nobase --excludedocs
 #do not install base
 @core --nodefaults
-openssh
-open-vm-tools
-sssd
+PyYAML
+adcli
+aide
+ansible
+authconfig
 autofs
+cifs-utils
 cryptsetup
 dracut-fips-aesni
+esc
 fipscheck
-aide
-# CCE-27351-6 Install the screen Package
-screen
+firewalld
+krb5-libs
+krb5-workstation
 ksh
 libreswan
-rsyslog
-unzip
-zip
-prelink
-wget
-# python-simplejson
-# libselinux-python
-# SCAP CONTENT
+libselinux-utils
+mcstrans
+nfs-utils
+ntp
+oddjob-mkhomedir
+open-vm-tools
 openscap
 openscap-scanner
 openscap-utils
-scap-security-guide
-xml-common
-esc
+openssh
+pam_krb5
 pam_pkcs11
-# for ansible
-ansible
-python-setuptools
-PyYAML
-python-jinja2
-# REMOVE PACKAGES
--abrt*
--avahi*
--iwl*
--ivtv-firmware
--alsa-tools-firmware
--iwl3160-firmware
--iwl5000-firmware
--iwl1000-firmware
--iwl100-firmware
--linux-firmware
--alsa-firmware
--aic94xx-firmware
--iwl6000-firmware
--iwl6050-firmware
--iwl7265-firmware
--iwl4965-firmware
--iwl6000g2b-firmware
--iwl105-firmware
--iwl2000-firmware
--iwl5150-firmware
--iwl7260-firmware
--iwl3945-firmware
--iwl2030-firmware
--iwl6000g2a-firmware
--iwl135-firmware
-# REMOVE NetworkManager
--NetworkManager*
--NetworkManager-config-server
--rhn-setup
--rhn-check
--rhnsd
--rhn-client-tools
--rhnlib
--yum-rhn-plugin
--prelink
--iprutils
--btrfs-progs*
-#-cronie-anacron
-#-cronie
-#-crontabs
--kexec-tools
--plymouth-scripts
--ModemManager-glib
--wpa_supplicant
--subscription-manager
--Red_Hat_Enterprise_Linux-Release_Notes-7*
--redhat-support*
--redhat-indexhtml
--virt-what
--fprintd
-# for time synchronization
-ntp
-# Packages for SELinux
 policycoreutils
 policycoreutils-python
+prelink
+python-jinja2
+python-setuptools
+realmd
+rsyslog
+samba
+samba-client
+samba-common
+scap-security-guide
+screen
 selinux-policy
 selinux-policy-targeted
-libselinux-utils
-setroubleshoot-server
 setools
 setools-console
-mcstrans
-# Firerwall
-firewalld
-# Packages needed for Active Directory integration
-realmd
-samba
-samba-common
-samba-client
+setroubleshoot-server
 sssd
-adcli
-authconfig
-samba-common
-oddjob-mkhomedir
-cifs-utils
-nfs-utils
 sssd-libwbclient
-autofs
-krb5-libs
-krb5-workstation
-pam_krb5
+unzip
+wget
+xml-common
+zip
+-ModemManager-glib
+-NetworkManager*
+-NetworkManager-config-server
+-Red_Hat_Enterprise_Linux-Release_Notes-7*
+-abrt*
+-aic94xx-firmware
+-alsa-firmware
+-alsa-tools-firmware
+-avahi*
+-btrfs-progs*
+-fprintd
+-iprutils
+-ivtv-firmware
+-iwl*
+-iwl100-firmware
+-iwl1000-firmware
+-iwl105-firmware
+-iwl135-firmware
+-iwl2000-firmware
+-iwl2030-firmware
+-iwl3160-firmware
+-iwl3945-firmware
+-iwl4965-firmware
+-iwl5000-firmware
+-iwl5150-firmware
+-iwl6000-firmware
+-iwl6000g2a-firmware
+-iwl6000g2b-firmware
+-iwl6050-firmware
+-iwl7260-firmware
+-iwl7265-firmware
+-kexec-tools
+-linux-firmware
+-plymouth-scripts
+-prelink
+-redhat-indexhtml
+-redhat-support*
+-rhn-check
+-rhn-client-tools
+-rhn-setup
+-rhnlib
+-rhnsd
+-subscription-manager
+-virt-what
+-wpa_supplicant
+-yum-rhn-plugin
 %end
 
 %addon com_redhat_kdump --disable
@@ -200,7 +183,7 @@ pam_krb5
 ip addr | grep -i broadcast | awk '{ print $2 }' > /tmp/interface
 sed -i 's/:/\ /g' /tmp/interface
 interface=`cat /tmp/interface`
-echo "network --bootproto=dhcp --device=$interface --noipv6 --hostname={{ hostname }}.{{ domain_name }} --activate" >/tmp/network.ks
+echo "network --bootproto=dhcp --device=$interface --noipv6 --hostname={{ hostname }}.{{ domain }} --activate" >/tmp/network.ks
 
 echo "firewall --trust $interface --service=ssh --port=1521:tcp,5500:tcp" > /tmp/firewall.ks
 

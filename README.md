@@ -1,5 +1,6 @@
 # oracledb_kickstart
-EL7 kickstart file for an Oracle database server.
+
+This role will build a kickstart of an EL7 host for an Oracle database installation.
 
 The root account is locked, use admin and sudo.
 
@@ -14,3 +15,23 @@ Files from the above repo, [Latest commit 4c8d996 on Oct 15, 2017](https://githu
 * ssg-suplemental.sh
 * ipa-pam-configuration.sh
 
+## Example Playbook
+
+	- name: PLAY | kickstart host install for Oracle database install
+	  hosts: [databases]
+	  become: true
+	  become_method: 'sudo'
+	  roles:
+	    - { role: oracledb_kickstart }
+
+## License
+
+MIT
+
+## Author Information
+
+|Author|E-mail|
+|---|---|
+|Bob Winter|TBD|
+
+## References

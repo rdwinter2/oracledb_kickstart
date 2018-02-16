@@ -1,0 +1,10 @@
+default menu.c32
+prompt 0
+timeout 0
+default kickstart
+menu title ########## PXE Boot Menu ##########
+label kickstart
+menu label ^kickstart
+menu default
+kernel rhel7/vmlinuz
+append initrd=rhel7/initrd.img repo=ftp://{{ ftp_ipv4_address }}/pub ks=ftp://{{ ftp_ipv4_address }}/pub/{{ newvm.ansible_facts.hw_product_uuid }}_ks.cfg inst.kdump_addon=off devfs=nomount xdriver=vesa nomodeset

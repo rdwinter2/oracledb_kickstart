@@ -40,6 +40,14 @@
                sched.mem.min: 512
                sched.mem.shares: normal
                sched.mem.pin: true
+               tools.syncTime: 0
+               time.synchronize.continue: 0
+               time.synchronize.restore: 0
+               time.synchronize.resume.disk: 0
+               time.synchronize.shrink: 0
+               time.synchronize.tools.startup: 0
+               time.synchronize.tools.enable: 0
+               time.synchronize.resume.host: 0
 #               folder: test
                notes: This is a test VM created by ansible
                otheridentifyinginfo:

@@ -18,7 +18,7 @@ Files from the above repo, [Latest commit 4c8d996 on Oct 15, 2017](https://githu
 ## Example Playbook
 
 	- name: PLAY | kickstart host install for Oracle database install
-	  hosts: [databases]
+	  hosts: [pxeboot]
 	  become: true
 	  become_method: 'sudo'
 	  roles:

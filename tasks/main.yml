@@ -2,7 +2,7 @@
 
 #        - name: Check to see if the VM is present
 #          vsphere_guest:
-#            vcenter_hostname: ESXI6FREE.rdwinter2.com
+#            vcenter_hostname: "{{ vcenter_hostname }}"
 #            username: '{{ vcenter_username }}'
 #            password: '{{ vcenter_password }}'
 #            guest: "{{ vm_name }}"
@@ -10,152 +10,158 @@
 
 #        - name: Shut down the guest OS
 #          vsphere_guest:
-#            vcenter_hostname: ESXI6FREE.rdwinter2.com
+#            vcenter_hostname: "{{ vcenter_hostname }}"
 #            username: '{{ vcenter_username }}'
 #            password: '{{ vcenter_password }}'
 #            guest: "{{ vm_name }}"
 #            state: powered_off
 
-        - name: Delete the VM if it exists
-          vsphere_guest:
-            vcenter_hostname: ESXI6FREE.rdwinter2.com
-            username: '{{ vcenter_username }}'
-            password: '{{ vcenter_password }}'
-            guest: "{{ vm_name }}"
-            state: absent
-            force: yes
+- name: Generate random VM name
+  command: openssl rand -base64 16
+  register: vm_name
+  when: ephemeral_vm
 
-        - name: Create the VM
-          vsphere_guest:
-           vcenter_hostname: ESXI6FREE.rdwinter2.com
-           username: '{{ vcenter_username }}'
-           password: '{{ vcenter_password }}'
-           guest: "{{ vm_name }}"
-           state: present
-           validate_certs: no
-           vm_extra_config:
-               vcpu.hotadd: yes
-               mem.hotadd:  yes
-               disk.enableUUID: true
-               sched.mem.min: 512
-               sched.mem.shares: normal
-               sched.mem.pin: true
-#               folder: test
-               notes: This is a test VM created by ansible
-               otheridentifyinginfo:
-                   env: "dev"
-           vm_disk:
-               disk1:
-                       size_gb: 32
-                       type: thin
-                       datastore: datastore4tb_HD
-           vm_nic:
-               nic1:
-                   type: vmxnet3
-                   network: VM Network
-                   network_type: standard
-           vm_hardware:
-               memory_mb: 2048
-               num_cpus: 1
-               osid: rhel7_64Guest
-               scsi: paravirtual
-           vm_hw_version: "vmx-13"
-           esxi:
-               datacenter: ha-datacenter
-               hostname: ESXI6FREE.rdwinter2.com
+- name: Delete the VM if it exists
+  vsphere_guest:
+    vcenter_hostname: "{{ vcenter_hostname }}"
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    guest: "{{ vm_name }}"
+    state: absent
+    force: yes
 
-        - name: Gather VM facts
-          vsphere_guest:
-            vcenter_hostname: ESXI6FREE.rdwinter2.com
-            username: '{{ vcenter_username }}'
-            password: '{{ vcenter_password }}'
-            guest: "{{ vm_name }}"
-            vmware_guest_facts: yes
-          register: newvm
-          until: newvm|success
-          retries: 5
-          delay: 10
+- name: Create the VM
+  vsphere_guest:
+   vcenter_hostname: "{{ vcenter_hostname }}"
+   username: '{{ vcenter_username }}'
+   password: '{{ vcenter_password }}'
+   guest: "{{ vm_name }}"
+   state: present
+   validate_certs: no
+   vm_extra_config:
+     vcpu.hotadd: yes
+     mem.hotadd:  yes
+     disk.enableUUID: true
+     sched.mem.min: 512
+     sched.mem.shares: normal
+     sched.mem.pin: true
+     tools.syncTime: 0
+     time.synchronize.continue: 0
+     time.synchronize.restore: 0
+     time.synchronize.resume.disk: 0
+     time.synchronize.shrink: 0
+     time.synchronize.tools.startup: 0
+     time.synchronize.tools.enable: 0
+     time.synchronize.resume.host: 0
+#      folder: test
+     notes: This is an immutable VM created by ansible. The root account is locked.
+     otheridentifyinginfo:
+         env: "dev"
+   vm_disk:
+     disk1:
+       size_gb: 32
+       type: thin
+       datastore: "{{ datastore }}"
+   vm_nic:
+     nic1:
+       type: vmxnet3
+       network: "{{ network1 }}"
+       network_type: standard
+     nic2:
+       type: vmxnet3
+       network: "{{ network2 }}"
+       network_type: standard
+   vm_hardware:
+     memory_mb: "{{ memory_mb }}"
+     num_cpus: "{{ num_cpus }}"
+     osid: rhel7_64Guest
+     scsi: paravirtual
+   vm_hw_version: "vmx-13"
+   esxi:
+     datacenter: "{{ vcenter_datacenter }}"
+     hostname: "{{ esxi_hostname }}"
 
-        - name: All info
-          debug:
-            msg: "{{ newvm.ansible_facts }} {{ vm_name }}"
+- name: Gather VM facts
+  vsphere_guest:
+    vcenter_hostname: "{{ vcenter_hostname }}"
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    guest: "{{ vm_name }}"
+    vmware_guest_facts: yes
+  register: newvm
+  until: newvm|success
+  retries: 5
+  delay: 10
 
-        - name: Find the current date/time
-          shell:
-            cmd: date
-          register: datetime
+- name: All info
+  debug:
+    msg: "{{ newvm.ansible_facts }} {{ vm_name }}"
 
-        - name: "Create specific pxelinx.cfg for this machine's UUID: {{ newvm.ansible_facts.hw_product_uuid }}"
-          template:
-            src: ../files/pxelinux.cfg.j2
-            dest: "/tmp/{{ newvm.ansible_facts.hw_product_uuid }}"
-            mode: '0644'
+- name: Find the current date/time
+  shell:
+    cmd: date
+  register: datetime
 
-        - name: Copy it to /var/lib/tftpboot/pxelinx.cfg
-          command: "/bin/cp /tmp/{{ newvm.ansible_facts.hw_product_uuid }} ."
-          args:
-            chdir: /var/lib/tftpboot/pxelinux.cfg
-          delegate_to: 127.0.0.1
-          run_once: true
-          become: true
+- name: Create a random bootloader password
+  command: yes `openssl rand -base64 48` | grub2-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}'
+  register: bootloader_pw
+  when: randomize_bootloader_pw
 
-        - name: Create specific kickstart file
-          template:
-            src: ../files/pxeboot_ks.cfg.j2
-            dest: "/tmp/{{ newvm.ansible_facts.hw_product_uuid }}_ks.cfg"
-            mode: '0644'
+- name: Create specific pxelinx.cfg for this machine's UUID: {{ newvm.ansible_facts.hw_product_uuid }}
+  template:
+    src: pxelinux.cfg.j2
+    dest: "/var/lib/tftpboot/pxelinx.cfg/{{ newvm.ansible_facts.hw_product_uuid }}"
+    mode: '0644'
 
-        - name: Copy it to /var/ftp/pub
-          command: "/bin/cp /tmp/{{ newvm.ansible_facts.hw_product_uuid }}_ks.cfg ."
-          args:
-            chdir: /var/ftp/pub
-          delegate_to: 127.0.0.1
-          run_once: true
-          become: true
+- name: Create specific kickstart file
+  template:
+    src: pxeboot_ks.cfg.j2
+    dest: /var/ftp/pub/{{ newvm.ansible_facts.hw_product_uuid }}_ks.cfg
+    mode: '0644'
 
-        - name: Power on the VM
-          vsphere_guest:
-            vcenter_hostname: ESXI6FREE.rdwinter2.com
-            username: '{{ vcenter_username }}'
-            password: '{{ vcenter_password }}'
-            guest: "{{ vm_name }}"
-            state: powered_on
+- name: Power on the VM
+  vsphere_guest:
+    vcenter_hostname: "{{ vcenter_hostname }}"
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    guest: "{{ vm_name }}"
+    state: powered_on
 
-        - name: Wait a couple of minutes for OS to install and tools to start
-          wait_for:
-            timeout: 120
-          changed_when: False
-        - name: Gather VM facts
-          vsphere_guest:
-            vcenter_hostname: ESXI6FREE.rdwinter2.com
-            username: '{{ vcenter_username }}'
-            password: '{{ vcenter_password }}'
-            guest: "{{ vm_name }}"
-            vmware_guest_facts: yes
-          register: newvm
-          until: newvm.ansible_facts.hw_eth0.ipaddresses[0] is defined
-          retries: 50
-          delay: 10
+- name: Wait a couple of minutes for OS to install and tools to start
+  wait_for:
+    timeout: 120
+  changed_when: False
+- name: Gather VM facts
+  vsphere_guest:
+    vcenter_hostname: "{{ vcenter_hostname }}"
+    username: '{{ vcenter_username }}'
+    password: '{{ vcenter_password }}'
+    guest: "{{ vm_name }}"
+    vmware_guest_facts: yes
+  register: newvm
+  until: newvm.ansible_facts.hw_eth0.ipaddresses[0] is defined
+  retries: 50
+  delay: 10
 
-        - name: IP address info
-          debug:
-            msg: "{{ newvm.ansible_facts.hw_eth0.ipaddresses[0] }} {{ vm_name }}"
+- name: IP address info
+  debug:
+    msg: "{{ newvm.ansible_facts.hw_eth0.ipaddresses[0] }} {{ vm_name }}"
 
-        - name: Wait for ssh to be available
-          wait_for:
-            host: "{{ newvm.ansible_facts.hw_eth0.ipaddresses[0] }}"
-            port: 22
-            timeout: 600
-            state: started
+- name: Wait for ssh to be available
+  wait_for:
+    host: "{{ newvm.ansible_facts.hw_eth0.ipaddresses[0] }}"
+    port: 22
+    timeout: 600
+    state: started
 
-        - name: add the new host to the ansible-playbook in-memory inventory
-          add_host:
-            name: "{{ newvm.ansible_facts.hw_eth0.ipaddresses[0] }}"
-            groups: just_created
+- name: add the new host to the ansible-playbook in-memory inventory
+  add_host:
+    name: "{{ newvm.ansible_facts.hw_eth0.ipaddresses[0] }}"
+    groups: just_created
 
-        - name: Perform Oracle specific setup on the new host
-          include: oracle_setup.yml
-          when: inventory_hostname in groups ['just_created']
+- name: Perform Oracle specific setup on the new host
+  include: oracle_setup.yml
+  when: inventory_hostname in groups ['just_created']
 
 # http://www.firewalld.org/documentation/howto/add-a-service.html
 # firewall-offline-cmd --new-service=myservice

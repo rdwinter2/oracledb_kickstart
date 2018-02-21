@@ -1,10 +1,24 @@
 ---
 
+vcenter_hostname: vcenter.localdomain
+vcenter_username: user
+# password should be in an ansible vault
+vcenter_passoword: password
+
+ephemeral_vm: false
+vm_name: example
 hostname: localhost
 domain: localdomain
 
-ftp_server: 192.168.0.5
-local_yum: http://repo01
+datastore: datastore
+network1: VM Network
+network1: internal
+memory_mb: 2048
+num_cpus: 1
+vcenter_datacenter: ha-datacenter
+esxi_hostname: esxi.localdomain
+ftp_server_ip: 192.168.0.1
+local_yum: http://repo
 gpgcheck: 0
 
 # partition sizes in KB
@@ -18,7 +32,8 @@ lv_audit_size: 512
 # lv_u01 will grow to fill /dev/sda
 lv_u01_size: 2048
 
-random_bootloader_pw: true
-# yes `openssl rand -base64 48` | grub2-mkpasswd-pbkdf2 | awk '/grub.pbkdf/{print$NF}'
-bootloader_pw: "grub.pbkdf2.sha512.10000.5E6A65DD6305678042C96BF43DEB5211A6E77AEEC6AB35F75C37F3A73DE6796930D0FC00C68D476E0A1A15C845C8B9FEFEB2FF85CA43D69ECAB5E4B30E8F64ED.E31A344F6446642440FB70BC5DBC68EDD8FB086A257E03F3DA42A66BEC8129F4C897D5E6FC662562AF70BF0DA3C9B6E60902E7B250C33CD95EFD943CC9C8720E"
+disable_numa: true
 
+randomize_bootloader_pw: true
+# grub2-mkpasswd-pbkdf2
+bootloader_pw: "grub.pbkdf2.sha512.10000.55B33FA0EEADAE11B1B72AFFDC3230C5FE022B7C4C2E659CBD5E3847615E3441B991FD6FA369FF37F8D4C97445BA3831A8C825737668FFC4CE00103537869AC5.7B93F27B51BC0F21B01D0FC796CA8EA3B4DF67A567302C0C4B8C9197BB52D2BF65001287D2C8E6830CD8B410F797BFE06EF0FC52A5639252C24CB0FBE5CD8EAC"

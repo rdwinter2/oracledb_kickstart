@@ -3,7 +3,7 @@
 vcenter_hostname: vcenter.localdomain
 vcenter_username: user
 # password should be in an ansible vault
-vcenter_passoword: password
+vcenter_password: password
 
 ephemeral_vm: false
 vm_name: example
